@@ -1,12 +1,11 @@
 import { pgTable, text, timestamp, integer, pgEnum } from 'drizzle-orm/pg-core';
-import { createId } from '@paralleldrive/cuid2';
 
 export const roleEnum = pgEnum('role', ['admin', 'user']);
 export const serviceStatusEnum = pgEnum('service_status', ['active', 'draft', 'inactive']);
 export const categoryEnum = pgEnum('category', ['Residential', 'Commercial', 'Specialty', 'Industrial']);
 
 export const users = pgTable('users', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   email: text('email').notNull().unique(),
   password: text('password').notNull(),
   name: text('name').notNull(),
@@ -15,7 +14,7 @@ export const users = pgTable('users', {
 });
 
 export const services = pgTable('services', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
   category: categoryEnum('category').notNull(),
