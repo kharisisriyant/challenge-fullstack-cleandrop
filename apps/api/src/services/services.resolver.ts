@@ -24,7 +24,8 @@ export class ServicesResolver {
     @Args('page', { type: () => Int, defaultValue: 1 }) page = 1,
     @Args('limit', { type: () => Int, defaultValue: 6 }) limit = 6,
   ): Promise<PaginatedServices> {
-    return this.servicesService.findAll({ search, status, category, page, limit });
+    const result = await this.servicesService.findAll({ search, status, category, page, limit });
+    return { items: result.items as unknown as ServiceType[], total: result.total };
   }
 
   @Query(() => ServiceType)

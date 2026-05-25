@@ -26,61 +26,110 @@ Enforce authorization on both the **API** and the **UI** (e.g. hide or disable a
 Reproduce the Services screen from the preview as closely as is reasonable:
 
 - **Sidebar** with navigation; **Services** is the active item
-- **Header**: title, subtitle, and a “Platform-wide” badge
+- **Header**: title, subtitle, and a "Platform-wide" badge
 - **Summary cards**: Total Services, Active, Drafts, Avg. Base Price
 - **Catalog** section: search, status/category filters, sortable table, pagination
-- **“+ Add”** button visible and functional for `admin` only
+- **"+ Add"** button visible and functional for `admin` only
 - Table columns: Name (with description), Category, Company, Status, Duration
 
 You may seed sample data so the page looks like the reference (9 services, mixed statuses, etc.).
 
 ---
 
-## Tech stack (required)
+## Tech stack
 
 | Layer | Stack |
 |-------|--------|
 | Runtime / package manager | **Bun** |
 | Backend | **NestJS** (TypeScript) |
 | ORM | **Drizzle ORM** |
-| Database | **PostgreSQL** |
-| Frontend UI | **shadcn/ui** |
+| Database | **PostgreSQL 16** |
+| Frontend UI | **shadcn/ui** (Radix primitives + TailwindCSS) |
 | Tests (backend) | **Jest** |
-| Dev environment | **Docker** (app + database runnable via `docker compose`) |
+| Dev environment | **Docker** (`docker compose` starts everything) |
+| Monorepo | Bun workspaces |
+| API style | **GraphQL** (code-first, `@nestjs/graphql` + Apollo Server) |
+| GQL client | Apollo Client v3 |
+| State | Zustand (auth store) |
 
 ---
 
-## Suggested scope
+## Running the project
 
-Minimum deliverables:
+### With Docker (recommended)
 
-1. **Auth**: login endpoint, JWT issuance with `role` (`admin` \| `user`), protected routes
-2. **Services API**: CRUD endpoints with role checks
-3. **Frontend**: login page → redirect to `/services`; role-aware catalog UI
-4. **Docker**: `docker compose up` (or documented equivalent) starts API, DB, and frontend
-5. **Tests**: at least a few meaningful backend tests (auth and/or services)
+```bash
+docker compose up --build
+```
 
-Nice to have (not required): refresh tokens, e2e tests, OpenAPI docs.
+- Frontend: http://localhost:5173
+- GraphQL playground: http://localhost:3000/graphql
+
+The `api` container runs migrations and seed automatically on startup.
+
+### Local development
+
+**Prerequisites:** Bun ≥ 1.1, PostgreSQL running on port 5432
+
+```bash
+# Install all deps
+bun install
+
+# API
+cd apps/api
+cp .env.example .env          # edit DATABASE_URL if needed
+bun run migrate               # run DB migrations
+bun run seed                  # seed 2 users + 9 services
+bun dev                       # starts on :3000
+
+# Web (new terminal)
+cd apps/web
+bun dev                       # starts on :5173
+```
+
+### Seeded accounts
+
+| Email | Password | Role |
+|-------|----------|------|
+| admin@cleandrop.com | admin123 | admin |
+| user@cleandrop.com | user123 | user |
+
+### Run backend tests
+
+```bash
+cd apps/api && bun run test
+```
 
 ---
 
-## Evaluation hints
+## Project structure
 
-We will look at:
-
-- Correct **role enforcement** (not only UI hiding)
-- **Code structure** and TypeScript usage
-- **Docker** setup that is easy to run locally
-- **Tests** that cover real behavior
-- How close the **UI** is to the reference and how polished it feels
+```
+/
+├── apps/
+│   ├── api/                 # NestJS + GraphQL + Drizzle
+│   │   ├── drizzle/         # schema, migrations, seed
+│   │   └── src/
+│   │       ├── auth/        # JWT auth, guards, resolver
+│   │       ├── drizzle/     # DrizzleModule (global)
+│   │       └── services/    # CRUD resolvers + service layer
+│   └── web/                 # React + Vite + Apollo + Zustand
+│       └── src/
+│           ├── apollo/      # ApolloClient with auth link
+│           ├── components/  # UI primitives + layout + services
+│           ├── graphql/     # GQL documents
+│           ├── pages/       # LoginPage, ServicesPage
+│           └── store/       # Zustand auth store
+├── docker-compose.yml
+├── package.json             # Bun workspace root
+└── tsconfig.base.json
+```
 
 ---
 
-## Getting started
+## Assumptions
 
-1. Fork or clone this repository.
-2. Read this file and inspect `challenge-preview.png`.
-3. Implement the stack above; document how to run the project in a `README.md`.
-4. Submit your solution (repo link or archive) with brief notes on any assumptions you made.
-
-Good luck.
+- GraphQL replaces REST; schema auto-generated code-first via `@nestjs/graphql`.
+- `role` enforcement at two points: `RolesGuard` on each resolver, and React UI hides admin controls when `role !== 'admin'`.
+- Summary cards show counts from the **current query result** for simplicity.
+- Prices stored as integers (EUR).
