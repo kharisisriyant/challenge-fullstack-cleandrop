@@ -1,0 +1,89 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthPayload {
+  email: String!
+  name: String!
+  role: String!
+  token: String!
+  userId: String!
+}
+
+input CreateServiceInput {
+  basePrice: Int!
+  category: ServiceCategory!
+  company: String!
+  description: String
+  duration: Int!
+  name: String!
+  status: ServiceStatus
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  createService(input: CreateServiceInput!): ServiceType!
+  deleteService(id: ID!): Boolean!
+  login(input: LoginInput!): AuthPayload!
+  updateService(id: ID!, input: UpdateServiceInput!): ServiceType!
+}
+
+type PaginatedServices {
+  items: [ServiceType!]!
+  total: Int!
+}
+
+type Query {
+  service(id: ID!): ServiceType!
+  services(category: String, limit: Int! = 6, page: Int! = 1, search: String, sortBy: String, sortOrder: SortOrder, status: String): PaginatedServices!
+}
+
+enum ServiceCategory {
+  Commercial
+  Industrial
+  Residential
+  Specialty
+}
+
+enum ServiceStatus {
+  active
+  draft
+  inactive
+}
+
+type ServiceType {
+  basePrice: Int!
+  category: ServiceCategory!
+  company: String!
+  createdAt: DateTime!
+  description: String!
+  duration: Int!
+  id: ID!
+  name: String!
+  status: ServiceStatus!
+  updatedAt: DateTime!
+}
+
+enum SortOrder {
+  asc
+  desc
+}
+
+input UpdateServiceInput {
+  basePrice: Int
+  category: ServiceCategory
+  company: String
+  description: String
+  duration: Int
+  name: String
+  status: ServiceStatus
+}

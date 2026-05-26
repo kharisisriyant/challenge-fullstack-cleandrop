@@ -13,8 +13,14 @@ export enum ServiceCategory {
   Industrial = 'Industrial',
 }
 
+export enum SortOrder {
+  asc = 'asc',
+  desc = 'desc',
+}
+
 registerEnumType(ServiceStatus, { name: 'ServiceStatus' });
 registerEnumType(ServiceCategory, { name: 'ServiceCategory' });
+registerEnumType(SortOrder, { name: 'SortOrder' });
 
 @ObjectType()
 export class ServiceType {

@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_SERVICES = gql`
-  query GetServices($search: String, $status: String, $category: String, $page: Int, $limit: Int) {
-    services(search: $search, status: $status, category: $category, page: $page, limit: $limit) {
+  query GetServices($search: String, $status: String, $category: String, $page: Int, $limit: Int, $sortBy: String, $sortOrder: String) {
+    services(search: $search, status: $status, category: $category, page: $page, limit: $limit, sortBy: $sortBy, sortOrder: $sortOrder) {
       items {
         id
         name

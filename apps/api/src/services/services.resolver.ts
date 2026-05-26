@@ -6,6 +6,7 @@ import {
   PaginatedServices,
   CreateServiceInput,
   UpdateServiceInput,
+  SortOrder,
 } from './services.types';
 import { GqlAuthGuard } from '../auth/gql-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -23,8 +24,10 @@ export class ServicesResolver {
     @Args('category', { nullable: true }) category?: string,
     @Args('page', { type: () => Int, defaultValue: 1 }) page = 1,
     @Args('limit', { type: () => Int, defaultValue: 6 }) limit = 6,
+    @Args('sortBy', { nullable: true }) sortBy?: string,
+    @Args('sortOrder', { type: () => SortOrder, nullable: true }) sortOrder?: SortOrder,
   ): Promise<PaginatedServices> {
-    const result = await this.servicesService.findAll({ search, status, category, page, limit });
+    const result = await this.servicesService.findAll({ search, status, category, page, limit, sortBy, sortOrder });
     return { items: result.items as unknown as ServiceType[], total: result.total };
   }
 

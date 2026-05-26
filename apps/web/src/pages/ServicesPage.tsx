@@ -34,6 +34,18 @@ export function ServicesPage() {
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(6);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: string) => {
+    if (field === sortBy) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    setPage(1);
+  };
 
   const { data, loading, error } = useQuery<{
     services: { items: Service[]; total: number };
@@ -44,6 +56,8 @@ export function ServicesPage() {
       category: category || undefined,
       page,
       limit,
+      sortBy,
+      sortOrder,
     },
     fetchPolicy: 'cache-and-network',
   });
@@ -132,6 +146,9 @@ export function ServicesPage() {
             page={page}
             limit={limit}
             isAdmin={isAdmin}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
             onPageChange={setPage}
             onLimitChange={(l) => { setLimit(l); setPage(1); }}
           />

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@apollo/client';
-import { Building2, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
+import { Building2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { StatusBadge } from './StatusBadge';
 import { ServiceFormModal } from './ServiceFormModal';
@@ -23,11 +23,21 @@ interface Props {
   page: number;
   limit: number;
   isAdmin: boolean;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  onSort: (field: string) => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
 }
 
-export function ServicesTable({ services, total, page, limit, isAdmin, onPageChange, onLimitChange }: Props) {
+function SortIcon({ field, sortBy, sortOrder }: { field: string; sortBy: string; sortOrder: 'asc' | 'desc' }) {
+  if (field !== sortBy) return <ChevronsUpDown className="h-3 w-3 opacity-40" />;
+  return sortOrder === 'asc'
+    ? <ChevronUp className="h-3 w-3" />
+    : <ChevronDown className="h-3 w-3" />;
+}
+
+export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, sortOrder, onSort, onPageChange, onLimitChange }: Props) {
   const totalPages = Math.ceil(total / limit);
 
   const [deleteService] = useMutation(DELETE_SERVICE, {
@@ -45,11 +55,17 @@ export function ServicesTable({ services, total, page, limit, isAdmin, onPageCha
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-xs text-muted-foreground">
-              <th className="pb-3 pr-4 font-medium">Name</th>
-              <th className="pb-3 pr-4 font-medium">Category</th>
-              <th className="pb-3 pr-4 font-medium">Company</th>
-              <th className="pb-3 pr-4 font-medium">Status</th>
-              <th className="pb-3 pr-4 font-medium">Duration</th>
+              {(['name', 'category', 'company', 'status', 'duration'] as const).map((field) => (
+                <th key={field} className="pb-3 pr-4 font-medium">
+                  <button
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    onClick={() => onSort(field)}
+                  >
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                    <SortIcon field={field} sortBy={sortBy} sortOrder={sortOrder} />
+                  </button>
+                </th>
+              ))}
               {isAdmin && <th className="pb-3 font-medium"></th>}
             </tr>
           </thead>

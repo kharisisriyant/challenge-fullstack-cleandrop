@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../../drizzle/schema';
-import { eq, ilike, and, SQL, sql } from 'drizzle-orm';
-import { CreateServiceInput, UpdateServiceInput } from './services.types';
+import { eq, ilike, and, SQL, sql, asc, desc } from 'drizzle-orm';
+import { CreateServiceInput, UpdateServiceInput, SortOrder } from './services.types';
 
 @Injectable()
 export class ServicesService {
@@ -14,6 +14,8 @@ export class ServicesService {
     category?: string;
     page: number;
     limit: number;
+    sortBy?: string;
+    sortOrder?: SortOrder;
   }) {
     const conditions: SQL[] = [];
     if (opts.search) conditions.push(ilike(schema.services.name, `%${opts.search}%`));
@@ -23,11 +25,25 @@ export class ServicesService {
     const where = conditions.length ? and(...conditions) : undefined;
     const offset = (opts.page - 1) * opts.limit;
 
+    const sortableColumns = {
+      name: schema.services.name,
+      category: schema.services.category,
+      company: schema.services.company,
+      status: schema.services.status,
+      duration: schema.services.duration,
+    };
+    type SortKey = keyof typeof sortableColumns;
+    const sortKey: SortKey = (opts.sortBy && opts.sortBy in sortableColumns)
+      ? (opts.sortBy as SortKey)
+      : 'name';
+    const orderExpr = opts.sortOrder === SortOrder.desc ? desc(sortableColumns[sortKey]) : asc(sortableColumns[sortKey]);
+
     const [items, [countRow]] = await Promise.all([
       this.drizzle.db
         .select()
         .from(schema.services)
         .where(where)
+        .orderBy(orderExpr)
         .limit(opts.limit)
         .offset(offset),
       this.drizzle.db
