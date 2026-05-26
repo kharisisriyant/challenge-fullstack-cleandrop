@@ -56,6 +56,21 @@ export class ServiceFiltersInput {
   @IsString()
   @IsOptional()
   category?: string;
+
+  @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
+  companyId?: string;
+
+  @Field(() => Int, { nullable: true })
+  @IsNumber()
+  @IsOptional()
+  durationMin?: number;
+
+  @Field(() => Int, { nullable: true })
+  @IsNumber()
+  @IsOptional()
+  durationMax?: number;
 }
 
 @InputType()

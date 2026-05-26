@@ -38,6 +38,9 @@ export function ServicesPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [category, setCategory] = useState('');
+  const [companyId, setCompanyId] = useState('');
+  const [durationMin, setDurationMin] = useState<number | undefined>(undefined);
+  const [durationMax, setDurationMax] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(6);
   const [sortBy, setSortBy] = useState('name');
@@ -57,6 +60,9 @@ export function ServicesPage() {
     search: search || undefined,
     status: status || undefined,
     category: category || undefined,
+    companyId: companyId || undefined,
+    durationMin,
+    durationMax,
   };
 
   const { data, loading, error } = useQuery<{
@@ -162,6 +168,19 @@ export function ServicesPage() {
             onSort={handleSort}
             onPageChange={setPage}
             onLimitChange={(l) => { setLimit(l); setPage(1); }}
+            filters={{
+              search,
+              setSearch: (v) => { setSearch(v); setPage(1); },
+              category,
+              setCategory: (v) => { setCategory(v); setPage(1); },
+              companyId,
+              setCompanyId: (v) => { setCompanyId(v); setPage(1); },
+              status,
+              setStatus: (v) => { setStatus(v); setPage(1); },
+              durationMin,
+              durationMax,
+              setDurationRange: (min, max) => { setDurationMin(min); setDurationMax(max); setPage(1); },
+            }}
           />
         )}
       </div>

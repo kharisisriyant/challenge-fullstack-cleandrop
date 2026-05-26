@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../../drizzle/schema';
-import { eq, ilike, and, SQL, sql, asc, desc } from 'drizzle-orm';
+import { eq, ilike, and, SQL, sql, asc, desc, gte, lte } from 'drizzle-orm';
 import { CreateServiceInput, UpdateServiceInput, SortOrder, ServiceFiltersInput, ServicePaginationInput, ServiceSortInput, ServiceStatsType } from './services.types';
 
 type ServiceWithCompany = schema.Service & { company: schema.Company };
@@ -14,6 +14,17 @@ export class ServicesService {
     return { ...row.services, company: row.companies };
   }
 
+  private buildConditions(filters?: ServiceFiltersInput): SQL[] {
+    const conditions: SQL[] = [];
+    if (filters?.search) conditions.push(ilike(schema.services.name, `%${filters.search}%`));
+    if (filters?.status) conditions.push(eq(schema.services.status, filters.status as schema.Service['status']));
+    if (filters?.category) conditions.push(eq(schema.services.category, filters.category as schema.Service['category']));
+    if (filters?.companyId) conditions.push(eq(schema.services.companyId, filters.companyId));
+    if (typeof filters?.durationMin === 'number') conditions.push(gte(schema.services.duration, filters.durationMin));
+    if (typeof filters?.durationMax === 'number') conditions.push(lte(schema.services.duration, filters.durationMax));
+    return conditions;
+  }
+
   async findAll(opts: {
     filters?: ServiceFiltersInput;
     pagination?: ServicePaginationInput;
@@ -23,11 +34,7 @@ export class ServicesService {
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 6;
 
-    const conditions: SQL[] = [];
-    if (filters?.search) conditions.push(ilike(schema.services.name, `%${filters.search}%`));
-    if (filters?.status) conditions.push(eq(schema.services.status, filters.status as schema.Service['status']));
-    if (filters?.category) conditions.push(eq(schema.services.category, filters.category as schema.Service['category']));
-
+    const conditions = this.buildConditions(filters);
     const where = conditions.length ? and(...conditions) : undefined;
     const offset = (page - 1) * limit;
 
@@ -56,6 +63,7 @@ export class ServicesService {
       this.drizzle.db
         .select({ count: sql<number>`count(*)::int` })
         .from(schema.services)
+        .innerJoin(schema.companies, eq(schema.services.companyId, schema.companies.id))
         .where(where),
     ]);
 
@@ -63,21 +71,18 @@ export class ServicesService {
   }
 
   async getStats(filters?: ServiceFiltersInput): Promise<ServiceStatsType> {
-    const conditions: SQL[] = [];
-    if (filters?.search) conditions.push(ilike(schema.services.name, `%${filters.search}%`));
-    if (filters?.status) conditions.push(eq(schema.services.status, filters.status as schema.Service['status']));
-    if (filters?.category) conditions.push(eq(schema.services.category, filters.category as schema.Service['category']));
-
+    const conditions = this.buildConditions(filters);
     const where = conditions.length ? and(...conditions) : undefined;
 
     const [row] = await this.drizzle.db
       .select({
         total: sql<number>`count(*)::int`,
-        active: sql<number>`count(*) filter (where status = 'active')::int`,
-        drafts: sql<number>`count(*) filter (where status = 'draft')::int`,
-        avgBasePrice: sql<number>`coalesce(round(avg(base_price))::int, 0)`,
+        active: sql<number>`count(*) filter (where ${schema.services.status} = 'active')::int`,
+        drafts: sql<number>`count(*) filter (where ${schema.services.status} = 'draft')::int`,
+        avgBasePrice: sql<number>`coalesce(round(avg(${schema.services.basePrice}))::int, 0)`,
       })
       .from(schema.services)
+      .innerJoin(schema.companies, eq(schema.services.companyId, schema.companies.id))
       .where(where);
 
     return {

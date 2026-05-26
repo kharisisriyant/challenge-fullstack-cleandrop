@@ -1,9 +1,15 @@
-import { useMutation } from '@apollo/client';
-import { Building2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery } from '@apollo/client';
+import { Building2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Filter, Pencil, Search, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Slider } from '../ui/slider';
 import { StatusBadge } from './StatusBadge';
 import { ServiceFormModal } from './ServiceFormModal';
 import { DELETE_SERVICE, GET_SERVICES } from '../../graphql/services';
+import { GET_COMPANIES } from '../../graphql/companies';
 
 interface Company {
   id: string;
@@ -22,6 +28,20 @@ interface Service {
   basePrice: number;
 }
 
+export interface FilterControls {
+  search: string;
+  setSearch: (v: string) => void;
+  category: string;
+  setCategory: (v: string) => void;
+  companyId: string;
+  setCompanyId: (v: string) => void;
+  status: string;
+  setStatus: (v: string) => void;
+  durationMin?: number;
+  durationMax?: number;
+  setDurationRange: (min: number | undefined, max: number | undefined) => void;
+}
+
 interface Props {
   services: Service[];
   total: number;
@@ -33,7 +53,13 @@ interface Props {
   onSort: (field: string) => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
+  filters: FilterControls;
 }
+
+const CATEGORIES = ['Residential', 'Commercial', 'Specialty', 'Industrial'];
+const STATUSES = ['active', 'draft', 'inactive'];
+const DURATION_FLOOR = 0;
+const DURATION_CEIL = 480;
 
 function SortIcon({ field, sortBy, sortOrder }: { field: string; sortBy: string; sortOrder: 'asc' | 'desc' }) {
   if (field !== sortBy) return <ChevronsUpDown className="h-3 w-3 opacity-40" />;
@@ -42,12 +68,76 @@ function SortIcon({ field, sortBy, sortOrder }: { field: string; sortBy: string;
     : <ChevronDown className="h-3 w-3" />;
 }
 
-export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, sortOrder, onSort, onPageChange, onLimitChange }: Props) {
+function FilterButton({ active }: { active: boolean }) {
+  return (
+    <Filter className={`h-3 w-3 ${active ? 'text-primary fill-primary' : 'opacity-40'}`} />
+  );
+}
+
+function HeaderCell({
+  field,
+  label,
+  sortBy,
+  sortOrder,
+  onSort,
+  filterActive,
+  filterContent,
+}: {
+  field: string;
+  label: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  onSort: (f: string) => void;
+  filterActive: boolean;
+  filterContent: React.ReactNode;
+}) {
+  return (
+    <th className="pb-3 pr-4 font-medium">
+      <div className="flex items-center gap-1">
+        <button
+          className="flex items-center gap-1 hover:text-foreground transition-colors"
+          onClick={() => onSort(field)}
+        >
+          {label}
+          <SortIcon field={field} sortBy={sortBy} sortOrder={sortOrder} />
+        </button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="p-0.5 hover:text-foreground transition-colors" aria-label={`Filter ${label}`}>
+              <FilterButton active={filterActive} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64">{filterContent}</PopoverContent>
+        </Popover>
+      </div>
+    </th>
+  );
+}
+
+export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, sortOrder, onSort, onPageChange, onLimitChange, filters }: Props) {
   const totalPages = Math.ceil(total / limit);
 
   const [deleteService] = useMutation(DELETE_SERVICE, {
     refetchQueries: [{ query: GET_SERVICES, variables: { page, limit } }],
   });
+
+  const { data: companiesData } = useQuery<{ companies: Company[] }>(GET_COMPANIES, {
+    fetchPolicy: 'cache-first',
+  });
+  const companies = companiesData?.companies ?? [];
+
+  const [companyQuery, setCompanyQuery] = useState('');
+  const filteredCompanies = useMemo(() => {
+    const q = companyQuery.trim().toLowerCase();
+    if (!q) return companies;
+    return companies.filter((c) => c.name.toLowerCase().includes(q));
+  }, [companies, companyQuery]);
+
+  const selectedCompany = companies.find((c) => c.id === filters.companyId);
+
+  const dMin = filters.durationMin ?? DURATION_FLOOR;
+  const dMax = filters.durationMax ?? DURATION_CEIL;
+  const [durationDraft, setDurationDraft] = useState<[number, number]>([dMin, dMax]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this service?')) return;
@@ -60,17 +150,176 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-xs text-muted-foreground">
-              {(['name', 'category', 'company', 'status', 'duration'] as const).map((field) => (
-                <th key={field} className="pb-3 pr-4 font-medium">
-                  <button
-                    className="flex items-center gap-1 hover:text-foreground transition-colors"
-                    onClick={() => onSort(field)}
-                  >
-                    {field.charAt(0).toUpperCase() + field.slice(1)}
-                    <SortIcon field={field} sortBy={sortBy} sortOrder={sortOrder} />
-                  </button>
-                </th>
-              ))}
+              <HeaderCell
+                field="name"
+                label="Name"
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={onSort}
+                filterActive={!!filters.search}
+                filterContent={
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">Search name</label>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        autoFocus
+                        placeholder="Search services..."
+                        className="pl-8"
+                        value={filters.search}
+                        onChange={(e) => filters.setSearch(e.target.value)}
+                      />
+                    </div>
+                    {filters.search && (
+                      <Button variant="ghost" size="sm" className="h-7 w-full" onClick={() => filters.setSearch('')}>
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                }
+              />
+              <HeaderCell
+                field="category"
+                label="Category"
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={onSort}
+                filterActive={!!filters.category}
+                filterContent={
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">Category</label>
+                    <Select
+                      value={filters.category || 'all'}
+                      onValueChange={(v) => filters.setCategory(v === 'all' ? '' : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Categories" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                }
+              />
+              <HeaderCell
+                field="company"
+                label="Company"
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={onSort}
+                filterActive={!!filters.companyId}
+                filterContent={
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">Company</label>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        autoFocus
+                        placeholder="Search companies..."
+                        className="pl-8"
+                        value={companyQuery}
+                        onChange={(e) => setCompanyQuery(e.target.value)}
+                      />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto rounded border">
+                      {filteredCompanies.length === 0 && (
+                        <div className="px-2 py-2 text-xs text-muted-foreground">No matches</div>
+                      )}
+                      {filteredCompanies.map((c) => {
+                        const selected = c.id === filters.companyId;
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => filters.setCompanyId(selected ? '' : c.id)}
+                            className={`flex w-full items-center justify-between px-2 py-1.5 text-left text-xs hover:bg-muted ${selected ? 'bg-muted font-medium' : ''}`}
+                          >
+                            <span className="truncate">{c.name}</span>
+                            {selected && <span className="text-primary">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {selectedCompany && (
+                      <Button variant="ghost" size="sm" className="h-7 w-full" onClick={() => filters.setCompanyId('')}>
+                        Clear ({selectedCompany.name})
+                      </Button>
+                    )}
+                  </div>
+                }
+              />
+              <HeaderCell
+                field="status"
+                label="Status"
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={onSort}
+                filterActive={!!filters.status}
+                filterContent={
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-foreground">Status</label>
+                    <Select
+                      value={filters.status || 'all'}
+                      onValueChange={(v) => filters.setStatus(v === 'all' ? '' : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        {STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                }
+              />
+              <HeaderCell
+                field="duration"
+                label="Duration"
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={onSort}
+                filterActive={filters.durationMin !== undefined || filters.durationMax !== undefined}
+                filterContent={
+                  <div className="space-y-3">
+                    <label className="text-xs font-medium text-foreground">Duration (minutes)</label>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{durationDraft[0]} min</span>
+                      <span>{durationDraft[1]} min</span>
+                    </div>
+                    <Slider
+                      min={DURATION_FLOOR}
+                      max={DURATION_CEIL}
+                      step={15}
+                      value={durationDraft}
+                      onValueChange={(v) => setDurationDraft([v[0], v[1]] as [number, number])}
+                      onValueCommit={(v) => {
+                        const min = v[0] === DURATION_FLOOR ? undefined : v[0];
+                        const max = v[1] === DURATION_CEIL ? undefined : v[1];
+                        filters.setDurationRange(min, max);
+                      }}
+                    />
+                    {(filters.durationMin !== undefined || filters.durationMax !== undefined) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-full"
+                        onClick={() => {
+                          setDurationDraft([DURATION_FLOOR, DURATION_CEIL]);
+                          filters.setDurationRange(undefined, undefined);
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                }
+              />
               {isAdmin && <th className="pb-3 font-medium"></th>}
             </tr>
           </thead>

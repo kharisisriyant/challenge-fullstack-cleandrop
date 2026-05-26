@@ -71,6 +71,9 @@ enum ServiceCategory {
 
 input ServiceFiltersInput {
   category: String
+  companyId: String
+  durationMax: Int
+  durationMin: Int
   search: String
   status: String
 }
