@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
+import { toast } from 'sonner';
 import { Building2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Filter, Pencil, Search, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -139,9 +141,22 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
   const dMax = filters.durationMax ?? DURATION_CEIL;
   const [durationDraft, setDurationDraft] = useState<[number, number]>([dMin, dMax]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this service?')) return;
-    await deleteService({ variables: { id } });
+  const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteService({ variables: { id: deleteTarget.id } });
+      toast.success(`Service "${deleteTarget.name}" deleted`);
+      setDeleteTarget(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      toast.error('Failed to delete service', { description: message });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -358,7 +373,7 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(service.id)}
+                        onClick={() => setDeleteTarget(service)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -413,6 +428,36 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o && !deleting) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete service?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This will permanently delete{' '}
+            <span className="font-medium text-foreground">"{deleteTarget?.name}"</span>. This action
+            cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleting}>
+              {deleting ? 'Deleting…' : 'Delete'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

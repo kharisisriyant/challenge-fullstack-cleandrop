@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -75,31 +76,41 @@ export function ServiceFormModal({ trigger, service, onSuccess }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    let companyId = form.companyId;
-    if (isNewCompany) {
-      const trimmed = newCompanyName.trim();
-      if (!trimmed) return;
-      const { data } = await createCompany({ variables: { input: { name: trimmed } } });
-      companyId = data?.createCompany?.id;
-      if (!companyId) return;
-    }
+    try {
+      let companyId = form.companyId;
+      if (isNewCompany) {
+        const trimmed = newCompanyName.trim();
+        if (!trimmed) return;
+        const { data } = await createCompany({ variables: { input: { name: trimmed } } });
+        companyId = data?.createCompany?.id;
+        if (!companyId) return;
+        toast.success(`Company "${trimmed}" created`);
+      }
 
-    const input = {
-      name: form.name,
-      description: form.description,
-      category: form.category,
-      companyId,
-      status: form.status,
-      duration: parseInt(form.duration),
-      basePrice: parseInt(form.basePrice),
-    };
-    if (isEdit) {
-      await updateService({ variables: { id: service.id, input } });
-    } else {
-      await createService({ variables: { input } });
+      const input = {
+        name: form.name,
+        description: form.description,
+        category: form.category,
+        companyId,
+        status: form.status,
+        duration: parseInt(form.duration),
+        basePrice: parseInt(form.basePrice),
+      };
+      if (isEdit) {
+        await updateService({ variables: { id: service.id, input } });
+        toast.success(`Service "${form.name}" updated`);
+      } else {
+        await createService({ variables: { input } });
+        toast.success(`Service "${form.name}" created`);
+      }
+      setOpen(false);
+      onSuccess?.();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      toast.error(isEdit ? 'Failed to update service' : 'Failed to create service', {
+        description: message,
+      });
     }
-    setOpen(false);
-    onSuccess?.();
   };
 
   return (
