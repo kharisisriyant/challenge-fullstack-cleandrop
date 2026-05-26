@@ -4,9 +4,15 @@ import * as schema from '../../drizzle/schema';
 import { eq, ilike, and, SQL, sql, asc, desc } from 'drizzle-orm';
 import { CreateServiceInput, UpdateServiceInput, SortOrder, ServiceFiltersInput, ServicePaginationInput, ServiceSortInput, ServiceStatsType } from './services.types';
 
+type ServiceWithCompany = schema.Service & { company: schema.Company };
+
 @Injectable()
 export class ServicesService {
   constructor(private readonly drizzle: DrizzleService) {}
+
+  private shape(row: { services: schema.Service; companies: schema.Company }): ServiceWithCompany {
+    return { ...row.services, company: row.companies };
+  }
 
   async findAll(opts: {
     filters?: ServiceFiltersInput;
@@ -25,12 +31,10 @@ export class ServicesService {
     const where = conditions.length ? and(...conditions) : undefined;
     const offset = (page - 1) * limit;
 
-    console.log({where})
-
     const sortableColumns = {
       name: schema.services.name,
       category: schema.services.category,
-      company: schema.services.company,
+      company: schema.companies.name,
       status: schema.services.status,
       duration: schema.services.duration,
     };
@@ -40,10 +44,11 @@ export class ServicesService {
       : 'name';
     const orderExpr = sort?.sortOrder === SortOrder.desc ? desc(sortableColumns[sortKey]) : asc(sortableColumns[sortKey]);
 
-    const [items, [countRow]] = await Promise.all([
+    const [rows, [countRow]] = await Promise.all([
       this.drizzle.db
         .select()
         .from(schema.services)
+        .innerJoin(schema.companies, eq(schema.services.companyId, schema.companies.id))
         .where(where)
         .orderBy(orderExpr)
         .limit(limit)
@@ -54,7 +59,7 @@ export class ServicesService {
         .where(where),
     ]);
 
-    return { items, total: countRow?.count ?? 0 };
+    return { items: rows.map((r) => this.shape(r)), total: countRow?.count ?? 0 };
   }
 
   async getStats(filters?: ServiceFiltersInput): Promise<ServiceStatsType> {
@@ -83,40 +88,51 @@ export class ServicesService {
     };
   }
 
-  async findOne(id: string) {
-    const [service] = await this.drizzle.db
+  async findOne(id: string): Promise<ServiceWithCompany> {
+    const [row] = await this.drizzle.db
       .select()
       .from(schema.services)
+      .innerJoin(schema.companies, eq(schema.services.companyId, schema.companies.id))
       .where(eq(schema.services.id, id))
       .limit(1);
-    if (!service) throw new NotFoundException(`Service ${id} not found`);
-    return service;
+    if (!row) throw new NotFoundException(`Service ${id} not found`);
+    return this.shape(row);
+  }
+
+  private async assertCompanyExists(companyId: string) {
+    const [c] = await this.drizzle.db
+      .select({ id: schema.companies.id })
+      .from(schema.companies)
+      .where(eq(schema.companies.id, companyId))
+      .limit(1);
+    if (!c) throw new NotFoundException(`Company ${companyId} not found`);
   }
 
   async create(input: CreateServiceInput) {
+    await this.assertCompanyExists(input.companyId);
     const [created] = await this.drizzle.db
       .insert(schema.services)
       .values({
         name: input.name,
         description: input.description ?? '',
         category: input.category,
-        company: input.company,
+        companyId: input.companyId,
         status: input.status ?? 'draft',
         duration: input.duration,
         basePrice: input.basePrice,
       })
       .returning();
-    return created;
+    return this.findOne(created.id);
   }
 
   async update(id: string, input: UpdateServiceInput) {
     await this.findOne(id);
-    const [updated] = await this.drizzle.db
+    if (input.companyId) await this.assertCompanyExists(input.companyId);
+    await this.drizzle.db
       .update(schema.services)
       .set({ ...input, updatedAt: new Date() })
-      .where(eq(schema.services.id, id))
-      .returning();
-    return updated;
+      .where(eq(schema.services.id, id));
+    return this.findOne(id);
   }
 
   async remove(id: string) {

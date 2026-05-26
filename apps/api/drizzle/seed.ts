@@ -13,6 +13,7 @@ const db = drizzle(sql, { schema });
 const HASH_ROUNDS = 10;
 
 await db.delete(schema.services);
+await db.delete(schema.companies);
 await db.delete(schema.users);
 
 await db.insert(schema.users).values([
@@ -30,12 +31,24 @@ await db.insert(schema.users).values([
   },
 ]);
 
+const insertedCompanies = await db
+  .insert(schema.companies)
+  .values([
+    { name: 'Acme Cleaning S.r.l.' },
+    { name: 'BrightHome S.P.A.' },
+  ])
+  .returning();
+
+const companyByName = Object.fromEntries(insertedCompanies.map((c) => [c.name, c.id]));
+const acmeId = companyByName['Acme Cleaning S.r.l.'];
+const brightId = companyByName['BrightHome S.P.A.'];
+
 await db.insert(schema.services).values([
   {
     name: 'Standard Clean',
     description: 'Routine apartment cleaning package.',
     category: 'Residential',
-    company: 'Acme Cleaning S.r.l.',
+    companyId: acmeId,
     status: 'active',
     duration: 90,
     basePrice: 80,
@@ -44,7 +57,7 @@ await db.insert(schema.services).values([
     name: 'Deep Clean',
     description: 'Extended detail-focused cleaning service.',
     category: 'Residential',
-    company: 'Acme Cleaning S.r.l.',
+    companyId: acmeId,
     status: 'active',
     duration: 180,
     basePrice: 150,
@@ -53,7 +66,7 @@ await db.insert(schema.services).values([
     name: 'Office Daily Clean',
     description: 'Daily office maintenance cleaning.',
     category: 'Commercial',
-    company: 'Acme Cleaning S.r.l.',
+    companyId: acmeId,
     status: 'active',
     duration: 120,
     basePrice: 120,
@@ -62,7 +75,7 @@ await db.insert(schema.services).values([
     name: 'Post-Renovation Cleanup',
     description: 'Dust and debris removal after works.',
     category: 'Specialty',
-    company: 'Acme Cleaning S.r.l.',
+    companyId: acmeId,
     status: 'draft',
     duration: 240,
     basePrice: 300,
@@ -71,7 +84,7 @@ await db.insert(schema.services).values([
     name: 'Move-In / Move-Out',
     description: 'Full reset clean for property handover.',
     category: 'Specialty',
-    company: 'BrightHome S.P.A.',
+    companyId: brightId,
     status: 'active',
     duration: 210,
     basePrice: 220,
@@ -80,7 +93,7 @@ await db.insert(schema.services).values([
     name: 'Retail Floor Refresh',
     description: 'Surface and floor-focused retail cleaning.',
     category: 'Commercial',
-    company: 'BrightHome S.P.A.',
+    companyId: brightId,
     status: 'inactive',
     duration: 100,
     basePrice: 95,
@@ -89,7 +102,7 @@ await db.insert(schema.services).values([
     name: 'Industrial Deep Scrub',
     description: 'Heavy-duty industrial facility cleaning.',
     category: 'Industrial',
-    company: 'BrightHome S.P.A.',
+    companyId: brightId,
     status: 'active',
     duration: 480,
     basePrice: 600,
@@ -98,7 +111,7 @@ await db.insert(schema.services).values([
     name: 'Carpet Steam Clean',
     description: 'Professional carpet steam treatment.',
     category: 'Residential',
-    company: 'Acme Cleaning S.r.l.',
+    companyId: acmeId,
     status: 'active',
     duration: 150,
     basePrice: 130,
@@ -107,12 +120,12 @@ await db.insert(schema.services).values([
     name: 'Window & Facade Clean',
     description: 'Exterior window and facade washing service.',
     category: 'Commercial',
-    company: 'BrightHome S.P.A.',
+    companyId: brightId,
     status: 'draft',
     duration: 200,
     basePrice: 180,
   },
 ]);
 
-console.log('Seed complete: 2 users, 9 services');
+console.log('Seed complete: 2 users, 2 companies, 9 services');
 await sql.end();

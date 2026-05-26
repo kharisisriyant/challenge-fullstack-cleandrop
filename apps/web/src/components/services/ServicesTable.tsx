@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { Building2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -6,12 +5,18 @@ import { StatusBadge } from './StatusBadge';
 import { ServiceFormModal } from './ServiceFormModal';
 import { DELETE_SERVICE, GET_SERVICES } from '../../graphql/services';
 
+interface Company {
+  id: string;
+  name: string;
+}
+
 interface Service {
   id: string;
   name: string;
   description: string;
   category: string;
-  company: string;
+  companyId: string;
+  company: Company;
   status: 'active' | 'draft' | 'inactive';
   duration: number;
   basePrice: number;
@@ -82,7 +87,7 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
                 <td className="py-3 pr-4">
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <Building2 className="h-3 w-3" />
-                    <span className="text-xs">{service.company}</span>
+                    <span className="text-xs">{service.company?.name}</span>
                   </div>
                 </td>
                 <td className="py-3 pr-4">

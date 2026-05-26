@@ -11,12 +11,18 @@ import { ServiceFormModal } from '../components/services/ServiceFormModal';
 import { GET_SERVICES, GET_SERVICE_STATS } from '../graphql/services';
 import { useAuthStore } from '../store/auth.store';
 
+interface Company {
+  id: string;
+  name: string;
+}
+
 interface Service {
   id: string;
   name: string;
   description: string;
   category: string;
-  company: string;
+  companyId: string;
+  company: Company;
   status: 'active' | 'draft' | 'inactive';
   duration: number;
   basePrice: number;

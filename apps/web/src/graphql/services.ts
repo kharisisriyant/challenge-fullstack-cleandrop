@@ -8,7 +8,11 @@ export const GET_SERVICES = gql`
         name
         description
         category
-        company
+        companyId
+        company {
+          id
+          name
+        }
         status
         duration
         basePrice
@@ -38,7 +42,11 @@ export const CREATE_SERVICE = gql`
       name
       description
       category
-      company
+      companyId
+      company {
+        id
+        name
+      }
       status
       duration
       basePrice
@@ -53,7 +61,11 @@ export const UPDATE_SERVICE = gql`
       name
       description
       category
-      company
+      companyId
+      company {
+        id
+        name
+      }
       status
       duration
       basePrice

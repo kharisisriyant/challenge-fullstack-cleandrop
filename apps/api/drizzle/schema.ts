@@ -13,12 +13,19 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+export const companies = pgTable('companies', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull().unique(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 export const services = pgTable('services', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
   category: categoryEnum('category').notNull(),
-  company: text('company').notNull(),
+  companyId: text('company_id').notNull().references(() => companies.id),
   status: serviceStatusEnum('status').notNull().default('draft'),
   duration: integer('duration').notNull(),
   basePrice: integer('base_price').notNull(),
@@ -28,5 +35,7 @@ export const services = pgTable('services', {
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Company = typeof companies.$inferSelect;
+export type NewCompany = typeof companies.$inferInsert;
 export type Service = typeof services.$inferSelect;
 export type NewService = typeof services.$inferInsert;

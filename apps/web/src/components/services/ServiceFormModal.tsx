@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import {
   Dialog,
   DialogContent,
@@ -13,13 +13,20 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { CREATE_SERVICE, UPDATE_SERVICE, GET_SERVICES } from '../../graphql/services';
+import { CREATE_COMPANY, GET_COMPANIES } from '../../graphql/companies';
+
+interface Company {
+  id: string;
+  name: string;
+}
 
 interface Service {
   id: string;
   name: string;
   description: string;
   category: string;
-  company: string;
+  companyId: string;
+  company: Company;
   status: string;
   duration: number;
   basePrice: number;
@@ -33,6 +40,7 @@ interface Props {
 
 const CATEGORIES = ['Residential', 'Commercial', 'Specialty', 'Industrial'];
 const STATUSES = ['active', 'draft', 'inactive'];
+const NEW_COMPANY = '__new__';
 
 export function ServiceFormModal({ trigger, service, onSuccess }: Props) {
   const isEdit = !!service;
@@ -41,25 +49,46 @@ export function ServiceFormModal({ trigger, service, onSuccess }: Props) {
     name: service?.name ?? '',
     description: service?.description ?? '',
     category: service?.category ?? 'Residential',
-    company: service?.company ?? '',
+    companyId: service?.companyId ?? '',
     status: service?.status ?? 'draft',
     duration: service?.duration?.toString() ?? '',
     basePrice: service?.basePrice?.toString() ?? '',
   });
+  const [newCompanyName, setNewCompanyName] = useState('');
 
-  const refetchQueries = [{ query: GET_SERVICES, variables: { page: 1, limit: 6 } }];
+  const { data: companiesData } = useQuery<{ companies: Company[] }>(GET_COMPANIES);
+  const companies = companiesData?.companies ?? [];
+
+  const refetchQueries = [
+    { query: GET_SERVICES, variables: { page: 1, limit: 6 } },
+    { query: GET_COMPANIES },
+  ];
   const [createService, { loading: creating }] = useMutation(CREATE_SERVICE, { refetchQueries });
   const [updateService, { loading: updating }] = useMutation(UPDATE_SERVICE, { refetchQueries });
+  const [createCompany, { loading: creatingCompany }] = useMutation(CREATE_COMPANY, {
+    refetchQueries: [{ query: GET_COMPANIES }],
+  });
 
-  const loading = creating || updating;
+  const loading = creating || updating || creatingCompany;
+  const isNewCompany = form.companyId === NEW_COMPANY;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    let companyId = form.companyId;
+    if (isNewCompany) {
+      const trimmed = newCompanyName.trim();
+      if (!trimmed) return;
+      const { data } = await createCompany({ variables: { input: { name: trimmed } } });
+      companyId = data?.createCompany?.id;
+      if (!companyId) return;
+    }
+
     const input = {
       name: form.name,
       description: form.description,
       category: form.category,
-      company: form.company,
+      companyId,
       status: form.status,
       duration: parseInt(form.duration),
       basePrice: parseInt(form.basePrice),
@@ -128,12 +157,28 @@ export function ServiceFormModal({ trigger, service, onSuccess }: Props) {
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="company">Company</Label>
-            <Input
-              id="company"
-              value={form.company}
-              onChange={(e) => setForm({ ...form, company: e.target.value })}
-              required
-            />
+            <Select
+              value={form.companyId}
+              onValueChange={(v) => setForm({ ...form, companyId: v })}
+            >
+              <SelectTrigger id="company">
+                <SelectValue placeholder="Select company" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+                <SelectItem value={NEW_COMPANY}>+ New company…</SelectItem>
+              </SelectContent>
+            </Select>
+            {isNewCompany && (
+              <Input
+                placeholder="New company name"
+                value={newCompanyName}
+                onChange={(e) => setNewCompanyName(e.target.value)}
+                required
+              />
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
@@ -163,7 +208,7 @@ export function ServiceFormModal({ trigger, service, onSuccess }: Props) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !form.companyId}>
               {loading ? 'Saving…' : isEdit ? 'Update' : 'Create'}
             </Button>
           </div>

@@ -10,10 +10,21 @@ type AuthPayload {
   userId: String!
 }
 
+type CompanyType {
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
+
+input CreateCompanyInput {
+  name: String!
+}
+
 input CreateServiceInput {
   basePrice: Int!
   category: ServiceCategory!
-  company: String!
+  companyId: ID!
   description: String
   duration: Int!
   name: String!
@@ -31,6 +42,7 @@ input LoginInput {
 }
 
 type Mutation {
+  createCompany(input: CreateCompanyInput!): CompanyType!
   createService(input: CreateServiceInput!): ServiceType!
   deleteService(id: ID!): Boolean!
   login(input: LoginInput!): AuthPayload!
@@ -43,6 +55,8 @@ type PaginatedServices {
 }
 
 type Query {
+  companies: [CompanyType!]!
+  company(id: ID!): CompanyType!
   service(id: ID!): ServiceType!
   serviceStats(filters: ServiceFiltersInput): ServiceStatsType!
   services(filters: ServiceFiltersInput, pagination: ServicePaginationInput, sort: ServiceSortInput): PaginatedServices!
@@ -87,7 +101,8 @@ enum ServiceStatus {
 type ServiceType {
   basePrice: Int!
   category: ServiceCategory!
-  company: String!
+  company: CompanyType!
+  companyId: ID!
   createdAt: DateTime!
   description: String!
   duration: Int!
@@ -105,7 +120,7 @@ enum SortOrder {
 input UpdateServiceInput {
   basePrice: Int
   category: ServiceCategory
-  company: String
+  companyId: ID
   description: String
   duration: Int
   name: String

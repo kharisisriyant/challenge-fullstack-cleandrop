@@ -1,5 +1,5 @@
 import { ObjectType, Field, ID, Int, InputType, registerEnumType } from '@nestjs/graphql';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export enum ServiceStatus {
   active = 'active',
@@ -22,6 +22,23 @@ export enum SortOrder {
 registerEnumType(ServiceStatus, { name: 'ServiceStatus' });
 registerEnumType(ServiceCategory, { name: 'ServiceCategory' });
 registerEnumType(SortOrder, { name: 'SortOrder' });
+
+@ObjectType()
+export class CompanyType {
+  @Field(() => ID)
+  @IsString()
+  id!: string;
+
+  @Field()
+  @IsString()
+  name!: string;
+
+  @Field()
+  createdAt!: Date;
+
+  @Field()
+  updatedAt!: Date;
+}
 
 @InputType()
 export class ServiceFiltersInput {
@@ -85,9 +102,12 @@ export class ServiceType {
   @IsString()
   category!: ServiceCategory;
 
-  @Field()
+  @Field(() => ID)
   @IsString()
-  company!: string;
+  companyId!: string;
+
+  @Field(() => CompanyType)
+  company!: CompanyType;
 
   @Field(() => ServiceStatus)
   @IsString()
@@ -147,9 +167,9 @@ export class CreateServiceInput {
   @IsString()
   category!: ServiceCategory;
 
-  @Field()
+  @Field(() => ID)
   @IsString()
-  company!: string;
+  companyId!: string;
 
   @Field(() => ServiceStatus, { nullable: true })
   @IsString()
@@ -182,10 +202,10 @@ export class UpdateServiceInput {
   @IsOptional()
   category?: ServiceCategory;
 
-  @Field({ nullable: true })
+  @Field(() => ID, { nullable: true })
   @IsString()
   @IsOptional()
-  company?: string;
+  companyId?: string;
 
   @Field(() => ServiceStatus, { nullable: true })
   @IsString()

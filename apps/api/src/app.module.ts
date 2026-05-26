@@ -7,6 +7,7 @@ import { join } from 'path';
 import { DrizzleModule } from './drizzle/drizzle.module';
 import { AuthModule } from './auth/auth.module';
 import { ServicesModule } from './services/services.module';
+import { CompaniesModule } from './companies/companies.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ServicesModule } from './services/services.module';
     DrizzleModule,
     AuthModule,
     ServicesModule,
+    CompaniesModule,
   ],
 })
 export class AppModule {}

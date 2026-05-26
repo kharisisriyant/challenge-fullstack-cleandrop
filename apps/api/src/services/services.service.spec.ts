@@ -3,12 +3,18 @@ import { NotFoundException } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { DrizzleService } from '../drizzle/drizzle.service';
 
+const sampleCompany = {
+  id: 'co-1',
+  name: 'Acme',
+  createdAt: new Date(),
+};
+
 const sampleService = {
   id: 'svc-1',
   name: 'Standard Clean',
   description: 'Routine clean',
   category: 'Residential',
-  company: 'Acme',
+  companyId: 'co-1',
   status: 'active',
   duration: 90,
   basePrice: 80,
@@ -16,13 +22,14 @@ const sampleService = {
   updatedAt: new Date(),
 };
 
-const makeDb = (overrides: Partial<typeof mockDb> = {}) => ({ ...mockDb, ...overrides });
+const sampleJoinedRow = { services: sampleService, companies: sampleCompany };
 
 const mockDb = {
   select: jest.fn().mockReturnThis(),
   from: jest.fn().mockReturnThis(),
+  innerJoin: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
-  limit: jest.fn().mockResolvedValue([sampleService]),
+  limit: jest.fn().mockResolvedValue([sampleJoinedRow]),
   offset: jest.fn().mockReturnThis(),
   insert: jest.fn().mockReturnThis(),
   values: jest.fn().mockResolvedValue([sampleService]),
@@ -52,10 +59,11 @@ describe('ServicesService', () => {
     expect(service).toBeDefined();
   });
 
-  it('findOne returns service when found', async () => {
-    mockDb.limit.mockResolvedValueOnce([sampleService]);
+  it('findOne returns service with company when found', async () => {
+    mockDb.limit.mockResolvedValueOnce([sampleJoinedRow]);
     const result = await service.findOne('svc-1');
     expect(result.id).toBe('svc-1');
+    expect(result.company.id).toBe('co-1');
   });
 
   it('findOne throws NotFoundException when not found', async () => {
