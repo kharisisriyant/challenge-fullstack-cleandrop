@@ -70,27 +70,35 @@ export class ServiceSortInput {
 @ObjectType()
 export class ServiceType {
   @Field(() => ID)
+  @IsString()
   id!: string;
 
   @Field()
+  @IsString()
   name!: string;
 
   @Field()
+  @IsString()
   description!: string;
 
   @Field(() => ServiceCategory)
+  @IsString()
   category!: ServiceCategory;
 
   @Field()
+  @IsString()
   company!: string;
 
   @Field(() => ServiceStatus)
+  @IsString()
   status!: ServiceStatus;
 
   @Field(() => Int)
+  @IsNumber()
   duration!: number;
 
   @Field(() => Int)
+  @IsNumber()
   basePrice!: number;
 
   @Field()
@@ -127,47 +135,70 @@ export class ServiceStatsType {
 @InputType()
 export class CreateServiceInput {
   @Field()
+  @IsString()
   name!: string;
 
   @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
   description?: string;
 
   @Field(() => ServiceCategory)
+  @IsString()
   category!: ServiceCategory;
 
   @Field()
+  @IsString()
   company!: string;
 
   @Field(() => ServiceStatus, { nullable: true })
+  @IsString()
+  @IsOptional()
   status?: ServiceStatus;
 
   @Field(() => Int)
+  @IsNumber()
   duration!: number;
 
   @Field(() => Int)
+  @IsNumber()
   basePrice!: number;
 }
 
 @InputType()
 export class UpdateServiceInput {
   @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
   name?: string;
 
   @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
   description?: string;
 
   @Field(() => ServiceCategory, { nullable: true })
+  @IsString()
+  @IsOptional()
   category?: ServiceCategory;
 
   @Field({ nullable: true })
+  @IsString()
+  @IsOptional()
   company?: string;
 
   @Field(() => ServiceStatus, { nullable: true })
+  @IsString()
+  @IsOptional()
   status?: ServiceStatus;
 
   @Field(() => Int, { nullable: true })
+  @IsNumber()
+  @IsOptional()
   duration?: number;
 
   @Field(() => Int, { nullable: true })
+  @IsNumber()
+  @IsOptional()
   basePrice?: number;
 }

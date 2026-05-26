@@ -10,6 +10,7 @@ import {
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { CREATE_SERVICE, UPDATE_SERVICE, GET_SERVICES } from '../../graphql/services';
 
@@ -91,7 +92,7 @@ export function ServiceFormModal({ trigger, service, onSuccess }: Props) {
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="desc">Description</Label>
-            <Input
+            <Textarea
               id="desc"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -142,6 +143,8 @@ export function ServiceFormModal({ trigger, service, onSuccess }: Props) {
                 type="number"
                 value={form.duration}
                 onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                min={30}
+                max={480}
                 required
               />
             </div>
