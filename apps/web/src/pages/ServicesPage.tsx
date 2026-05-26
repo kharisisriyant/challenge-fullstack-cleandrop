@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { SummaryCards } from '../components/services/SummaryCards';
 import { ServicesTable } from '../components/services/ServicesTable';
 import { ServiceFormModal } from '../components/services/ServiceFormModal';
-import { GET_SERVICES } from '../graphql/services';
+import { GET_SERVICES, GET_SERVICE_STATS } from '../graphql/services';
 import { useAuthStore } from '../store/auth.store';
 
 interface Service {
@@ -47,18 +47,23 @@ export function ServicesPage() {
     setPage(1);
   };
 
+  const filtersVar = {
+    search: search || undefined,
+    status: status || undefined,
+    category: category || undefined,
+  };
+
   const { data, loading, error } = useQuery<{
     services: { items: Service[]; total: number };
   }>(GET_SERVICES, {
-    variables: {
-      search: search || undefined,
-      status: status || undefined,
-      category: category || undefined,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-    },
+    variables: { filters: filtersVar, pagination: { page, limit }, sort: { sortBy, sortOrder } },
+    fetchPolicy: 'cache-and-network',
+  });
+
+  const { data: statsData } = useQuery<{
+    serviceStats: { total: number; active: number; drafts: number; avgBasePrice: number };
+  }>(GET_SERVICE_STATS, {
+    variables: { filters: filtersVar },
     fetchPolicy: 'cache-and-network',
   });
 
@@ -83,7 +88,7 @@ export function ServicesPage() {
         <p className="mt-1 text-sm text-muted-foreground">Manage your service catalog</p>
       </div>
 
-      <SummaryCards services={services} />
+      <SummaryCards stats={statsData?.serviceStats} />
 
       <div className="mt-6 rounded-xl border bg-white p-6">
         <div className="mb-4 flex items-center justify-between">

@@ -1,12 +1,15 @@
-import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import {
   ServiceType,
   PaginatedServices,
+  ServiceStatsType,
   CreateServiceInput,
   UpdateServiceInput,
-  SortOrder,
+  ServiceFiltersInput,
+  ServicePaginationInput,
+  ServiceSortInput,
 } from './services.types';
 import { GqlAuthGuard } from '../auth/gql-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -19,16 +22,20 @@ export class ServicesResolver {
 
   @Query(() => PaginatedServices)
   async services(
-    @Args('search', { nullable: true }) search?: string,
-    @Args('status', { nullable: true }) status?: string,
-    @Args('category', { nullable: true }) category?: string,
-    @Args('page', { type: () => Int, defaultValue: 1 }) page = 1,
-    @Args('limit', { type: () => Int, defaultValue: 6 }) limit = 6,
-    @Args('sortBy', { nullable: true }) sortBy?: string,
-    @Args('sortOrder', { type: () => SortOrder, nullable: true }) sortOrder?: SortOrder,
+    @Args('filters', { type: () => ServiceFiltersInput, nullable: true }) filters?: ServiceFiltersInput,
+    @Args('pagination', { type: () => ServicePaginationInput, nullable: true }) pagination?: ServicePaginationInput,
+    @Args('sort', { type: () => ServiceSortInput, nullable: true }) sort?: ServiceSortInput,
   ): Promise<PaginatedServices> {
-    const result = await this.servicesService.findAll({ search, status, category, page, limit, sortBy, sortOrder });
+    console.log({filters, pagination, sort})
+    const result = await this.servicesService.findAll({ filters, pagination, sort });
     return { items: result.items as unknown as ServiceType[], total: result.total };
+  }
+
+  @Query(() => ServiceStatsType)
+  async serviceStats(
+    @Args('filters', { type: () => ServiceFiltersInput, nullable: true }) filters?: ServiceFiltersInput,
+  ): Promise<ServiceStatsType> {
+    return this.servicesService.getStats(filters);
   }
 
   @Query(() => ServiceType)

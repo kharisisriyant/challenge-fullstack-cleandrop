@@ -2,28 +2,30 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../../drizzle/schema';
 import { eq, ilike, and, SQL, sql, asc, desc } from 'drizzle-orm';
-import { CreateServiceInput, UpdateServiceInput, SortOrder } from './services.types';
+import { CreateServiceInput, UpdateServiceInput, SortOrder, ServiceFiltersInput, ServicePaginationInput, ServiceSortInput, ServiceStatsType } from './services.types';
 
 @Injectable()
 export class ServicesService {
   constructor(private readonly drizzle: DrizzleService) {}
 
   async findAll(opts: {
-    search?: string;
-    status?: string;
-    category?: string;
-    page: number;
-    limit: number;
-    sortBy?: string;
-    sortOrder?: SortOrder;
+    filters?: ServiceFiltersInput;
+    pagination?: ServicePaginationInput;
+    sort?: ServiceSortInput;
   }) {
+    const { filters, pagination, sort } = opts;
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 6;
+
     const conditions: SQL[] = [];
-    if (opts.search) conditions.push(ilike(schema.services.name, `%${opts.search}%`));
-    if (opts.status) conditions.push(eq(schema.services.status, opts.status as schema.Service['status']));
-    if (opts.category) conditions.push(eq(schema.services.category, opts.category as schema.Service['category']));
+    if (filters?.search) conditions.push(ilike(schema.services.name, `%${filters.search}%`));
+    if (filters?.status) conditions.push(eq(schema.services.status, filters.status as schema.Service['status']));
+    if (filters?.category) conditions.push(eq(schema.services.category, filters.category as schema.Service['category']));
 
     const where = conditions.length ? and(...conditions) : undefined;
-    const offset = (opts.page - 1) * opts.limit;
+    const offset = (page - 1) * limit;
+
+    console.log({where})
 
     const sortableColumns = {
       name: schema.services.name,
@@ -33,10 +35,10 @@ export class ServicesService {
       duration: schema.services.duration,
     };
     type SortKey = keyof typeof sortableColumns;
-    const sortKey: SortKey = (opts.sortBy && opts.sortBy in sortableColumns)
-      ? (opts.sortBy as SortKey)
+    const sortKey: SortKey = (sort?.sortBy && sort.sortBy in sortableColumns)
+      ? (sort.sortBy as SortKey)
       : 'name';
-    const orderExpr = opts.sortOrder === SortOrder.desc ? desc(sortableColumns[sortKey]) : asc(sortableColumns[sortKey]);
+    const orderExpr = sort?.sortOrder === SortOrder.desc ? desc(sortableColumns[sortKey]) : asc(sortableColumns[sortKey]);
 
     const [items, [countRow]] = await Promise.all([
       this.drizzle.db
@@ -44,7 +46,7 @@ export class ServicesService {
         .from(schema.services)
         .where(where)
         .orderBy(orderExpr)
-        .limit(opts.limit)
+        .limit(limit)
         .offset(offset),
       this.drizzle.db
         .select({ count: sql<number>`count(*)::int` })
@@ -53,6 +55,32 @@ export class ServicesService {
     ]);
 
     return { items, total: countRow?.count ?? 0 };
+  }
+
+  async getStats(filters?: ServiceFiltersInput): Promise<ServiceStatsType> {
+    const conditions: SQL[] = [];
+    if (filters?.search) conditions.push(ilike(schema.services.name, `%${filters.search}%`));
+    if (filters?.status) conditions.push(eq(schema.services.status, filters.status as schema.Service['status']));
+    if (filters?.category) conditions.push(eq(schema.services.category, filters.category as schema.Service['category']));
+
+    const where = conditions.length ? and(...conditions) : undefined;
+
+    const [row] = await this.drizzle.db
+      .select({
+        total: sql<number>`count(*)::int`,
+        active: sql<number>`count(*) filter (where status = 'active')::int`,
+        drafts: sql<number>`count(*) filter (where status = 'draft')::int`,
+        avgBasePrice: sql<number>`coalesce(round(avg(base_price))::int, 0)`,
+      })
+      .from(schema.services)
+      .where(where);
+
+    return {
+      total: row?.total ?? 0,
+      active: row?.active ?? 0,
+      drafts: row?.drafts ?? 0,
+      avgBasePrice: row?.avgBasePrice ?? 0,
+    };
   }
 
   async findOne(id: string) {

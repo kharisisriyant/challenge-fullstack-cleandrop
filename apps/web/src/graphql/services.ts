@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_SERVICES = gql`
-  query GetServices($search: String, $status: String, $category: String, $page: Int, $limit: Int, $sortBy: String, $sortOrder: String) {
-    services(search: $search, status: $status, category: $category, page: $page, limit: $limit, sortBy: $sortBy, sortOrder: $sortOrder) {
+  query GetServices($filters: ServiceFiltersInput, $pagination: ServicePaginationInput, $sort: ServiceSortInput) {
+    services(filters: $filters, pagination: $pagination, sort: $sort) {
       items {
         id
         name
@@ -16,6 +16,17 @@ export const GET_SERVICES = gql`
         updatedAt
       }
       total
+    }
+  }
+`;
+
+export const GET_SERVICE_STATS = gql`
+  query GetServiceStats($filters: ServiceFiltersInput) {
+    serviceStats(filters: $filters) {
+      total
+      active
+      drafts
+      avgBasePrice
     }
   }
 `;

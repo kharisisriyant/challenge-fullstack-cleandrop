@@ -1,21 +1,22 @@
 import { Grid, Clock, FileEdit, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 
-interface Service {
-  status: string;
-  basePrice: number;
+interface Stats {
+  total: number;
+  active: number;
+  drafts: number;
+  avgBasePrice: number;
 }
 
 interface Props {
-  services: Service[];
+  stats?: Stats;
 }
 
-export function SummaryCards({ services }: Props) {
-  const total = services.length;
-  const active = services.filter((s) => s.status === 'active').length;
-  const drafts = services.filter((s) => s.status === 'draft').length;
-  const avgPrice =
-    total > 0 ? Math.round(services.reduce((sum, s) => sum + s.basePrice, 0) / total) : 0;
+export function SummaryCards({ stats }: Props) {
+  const total = stats?.total ?? 0;
+  const active = stats?.active ?? 0;
+  const drafts = stats?.drafts ?? 0;
+  const avgPrice = stats?.avgBasePrice ?? 0;
 
   return (
     <div className="grid grid-cols-4 gap-4">

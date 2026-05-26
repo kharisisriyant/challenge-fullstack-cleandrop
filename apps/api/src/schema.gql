@@ -44,7 +44,8 @@ type PaginatedServices {
 
 type Query {
   service(id: ID!): ServiceType!
-  services(category: String, limit: Int! = 6, page: Int! = 1, search: String, sortBy: String, sortOrder: SortOrder, status: String): PaginatedServices!
+  serviceStats(filters: ServiceFiltersInput): ServiceStatsType!
+  services(filters: ServiceFiltersInput, pagination: ServicePaginationInput, sort: ServiceSortInput): PaginatedServices!
 }
 
 enum ServiceCategory {
@@ -52,6 +53,29 @@ enum ServiceCategory {
   Industrial
   Residential
   Specialty
+}
+
+input ServiceFiltersInput {
+  category: String
+  search: String
+  status: String
+}
+
+input ServicePaginationInput {
+  limit: Int = 6
+  page: Int = 1
+}
+
+input ServiceSortInput {
+  sortBy: String
+  sortOrder: SortOrder
+}
+
+type ServiceStatsType {
+  active: Int!
+  avgBasePrice: Int!
+  drafts: Int!
+  total: Int!
 }
 
 enum ServiceStatus {
