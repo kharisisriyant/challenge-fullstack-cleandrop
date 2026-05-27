@@ -10,7 +10,7 @@ const PASSWORD_HASH = bcrypt.hashSync(PLAINTEXT, 4);
 
 const mockUser = {
   id: 'user-1',
-  email: 'admin@cleandrop.com',
+  email: 'admin@cleandrop.io',
   name: 'Dev Admin',
   role: 'admin',
   password: PASSWORD_HASH,
@@ -54,33 +54,33 @@ describe('AuthService', () => {
   });
 
   it('returns token + user fields on valid credentials', async () => {
-    const result = await service.login('admin@cleandrop.com', PLAINTEXT);
+    const result = await service.login('admin@cleandrop.io', PLAINTEXT);
     expect(result).toEqual({
       token: 'signed-token',
       userId: 'user-1',
-      email: 'admin@cleandrop.com',
+      email: 'admin@cleandrop.io',
       name: 'Dev Admin',
       role: 'admin',
     });
   });
 
   it('signs JWT with sub/email/role payload', async () => {
-    await service.login('admin@cleandrop.com', PLAINTEXT);
+    await service.login('admin@cleandrop.io', PLAINTEXT);
     expect(mockJwt.sign).toHaveBeenCalledWith({
       sub: 'user-1',
-      email: 'admin@cleandrop.com',
+      email: 'admin@cleandrop.io',
       role: 'admin',
     });
   });
 
   it('throws UnauthorizedException on wrong password (no token signed)', async () => {
-    await expect(service.login('admin@cleandrop.com', 'wrong')).rejects.toThrow(UnauthorizedException);
+    await expect(service.login('admin@cleandrop.io', 'wrong')).rejects.toThrow(UnauthorizedException);
     expect(mockJwt.sign).not.toHaveBeenCalled();
   });
 
   it('throws UnauthorizedException when user not found (no token signed)', async () => {
     mockDrizzle.db.limit.mockResolvedValueOnce([]);
-    await expect(service.login('nobody@cleandrop.com', PLAINTEXT)).rejects.toThrow(UnauthorizedException);
+    await expect(service.login('nobody@cleandrop.io', PLAINTEXT)).rejects.toThrow(UnauthorizedException);
     expect(mockJwt.sign).not.toHaveBeenCalled();
   });
 });

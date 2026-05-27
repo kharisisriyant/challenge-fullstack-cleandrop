@@ -79,7 +79,7 @@ export function LoginPage() {
                         <Input
                           id="email"
                           type="email"
-                          placeholder="admin@cleandrop.com"
+                          placeholder="admin@cleandrop.io"
                           autoComplete="email"
                           {...field}
                           className={cn(invalidCls('email'))}
@@ -116,11 +116,6 @@ export function LoginPage() {
               );
             }}
           </Formik>
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            Admin: admin@cleandrop.com / admin123
-            <br />
-            User: user@cleandrop.com / user123
-          </p>
         </CardContent>
       </Card>
     </div>
