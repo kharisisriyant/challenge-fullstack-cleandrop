@@ -117,8 +117,8 @@ export function ServicesPage() {
           )}
         </div>
 
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-          <div className="relative w-full sm:max-w-sm sm:flex-1">
+        <div className="mb-4 flex flex-col gap-2 sm:gap-3">
+          <div className="relative w-full">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search services..."
@@ -132,7 +132,7 @@ export function ServicesPage() {
           </div>
           <div className="flex gap-2 sm:gap-3">
             <Select value={status || 'all'} onValueChange={handleFilterChange(setStatus)}>
-              <SelectTrigger className="flex-1 sm:w-40 sm:flex-none">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -143,7 +143,7 @@ export function ServicesPage() {
               </SelectContent>
             </Select>
             <Select value={category || 'all'} onValueChange={handleFilterChange(setCategory)}>
-              <SelectTrigger className="flex-1 sm:w-44 sm:flex-none">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>

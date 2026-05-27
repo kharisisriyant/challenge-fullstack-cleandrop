@@ -113,7 +113,7 @@ function HeaderCell({
               <FilterButton active={filterActive} />
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-64">{filterContent}</PopoverContent>
+          <PopoverContent align="end" className="w-64">{filterContent}</PopoverContent>
         </Popover>
         </div>
       </div>
@@ -357,7 +357,7 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
                 <td className="py-3 pr-4">
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <Badge variant="outline" className="p-2">
-                      <Building2 className="h-3 w-3" />
+                      <Building2 className="h-3 w-3 mr-1" />
                       <span className="text-xs">{service.company?.name}</span>
                     </Badge>
                   </div>
