@@ -43,8 +43,8 @@ bun dev                       # starts on :5173
 
 | Email | Password | Role |
 |-------|----------|------|
-| admin@cleandrop.com | admin123 | admin |
-| user@cleandrop.com | user123 | user |
+| admin@cleandrop.io | admin123 | admin |
+| user@cleandrop.io | user123 | user |
 
 ### Run backend tests
 

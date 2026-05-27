@@ -35,6 +35,8 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        VITE_GRAPHQL_URL: ${VITE_GRAPHQL_URL:-http://localhost:3000/graphql}
     depends_on:
       - api
     ports:
