@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Slider } from '../ui/slider';
 import { StatusBadge } from './StatusBadge';
 import { ServiceFormModal } from './ServiceFormModal';
-import { DELETE_SERVICE, GET_SERVICES } from '../../graphql/services';
+import { DELETE_SERVICE } from '../../graphql/services';
 import { GET_COMPANIES } from '../../graphql/companies';
 
 interface Company {
@@ -95,12 +95,15 @@ function HeaderCell({
 }) {
   return (
     <th className="pb-3 pr-4 font-medium">
-      <div className="flex items-center gap-1">
+      <div className="flex flex-row items-center justify-between gap-1">
+        <div>
+          {label}
+        </div>
+        <div className="flex">
         <button
           className="flex items-center gap-1 hover:text-foreground transition-colors"
           onClick={() => onSort(field)}
         >
-          {label}
           <SortIcon field={field} sortBy={sortBy} sortOrder={sortOrder} />
         </button>
         <Popover>
@@ -111,6 +114,7 @@ function HeaderCell({
           </PopoverTrigger>
           <PopoverContent className="w-64">{filterContent}</PopoverContent>
         </Popover>
+        </div>
       </div>
     </th>
   );
@@ -120,7 +124,8 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
   const totalPages = Math.ceil(total / limit);
 
   const [deleteService] = useMutation(DELETE_SERVICE, {
-    refetchQueries: [{ query: GET_SERVICES, variables: { page, limit } }],
+    refetchQueries: ['GetServices', 'GetServiceStats'],
+    awaitRefetchQueries: true,
   });
 
   const { data: companiesData } = useQuery<{ companies: Company[] }>(GET_COMPANIES, {
@@ -161,7 +166,7 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
 
   return (
     <div>
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-xs text-muted-foreground">
@@ -386,13 +391,64 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
         </table>
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-        <span>
+      {/* Mobile card list */}
+      <div className="space-y-3 md:hidden">
+        {services.map((service) => (
+          <div key={service.id} className="rounded-lg border bg-card p-3 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium">{service.name}</div>
+                <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                  {service.description}
+                </div>
+              </div>
+              <StatusBadge status={service.status} />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span className="rounded bg-muted px-1.5 py-0.5">{service.category}</span>
+              <span className="flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                {service.company?.name}
+              </span>
+              <span>{service.duration} min</span>
+              <span className="font-medium text-foreground">EUR {service.basePrice}</span>
+            </div>
+            {isAdmin && (
+              <div className="mt-3 flex items-center justify-end gap-1 border-t pt-2">
+                <ServiceFormModal
+                  trigger={
+                    <Button variant="ghost" size="sm" className="h-7">
+                      <Pencil className="mr-1 h-3.5 w-3.5" />
+                      Edit
+                    </Button>
+                  }
+                  service={service}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-destructive hover:text-destructive"
+                  onClick={() => setDeleteTarget(service)}
+                >
+                  <Trash2 className="mr-1 h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+        {services.length === 0 && (
+          <p className="py-8 text-center text-sm text-muted-foreground">No services found</p>
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-xs sm:text-sm">
           Showing {Math.min((page - 1) * limit + 1, total)} to {Math.min(page * limit, total)} of {total} services
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1">
-            <span className="text-xs">Rows per page</span>
+            <span className="text-xs">Rows</span>
             <select
               className="ml-1 rounded border px-1 py-0.5 text-xs"
               value={limit}
@@ -412,9 +468,9 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
               disabled={page <= 1}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              <span className="hidden sm:inline">Previous</span>
             </Button>
-            <span className="text-xs">Page {page} / {totalPages}</span>
+            <span className="text-xs">{page} / {totalPages || 1}</span>
             <Button
               variant="outline"
               size="sm"
@@ -422,7 +478,7 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages}
             >
-              Next
+              <span className="hidden sm:inline">Next</span>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

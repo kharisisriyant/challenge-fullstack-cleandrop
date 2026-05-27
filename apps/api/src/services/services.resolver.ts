@@ -26,7 +26,6 @@ export class ServicesResolver {
     @Args('pagination', { type: () => ServicePaginationInput, nullable: true }) pagination?: ServicePaginationInput,
     @Args('sort', { type: () => ServiceSortInput, nullable: true }) sort?: ServiceSortInput,
   ): Promise<PaginatedServices> {
-    console.log({filters, pagination, sort})
     const result = await this.servicesService.findAll({ filters, pagination, sort });
     return { items: result.items as unknown as ServiceType[], total: result.total };
   }

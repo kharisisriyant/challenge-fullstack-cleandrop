@@ -5,7 +5,7 @@ interface Props {
 }
 
 export function StatusBadge({ status }: Props) {
-  if (status === 'active') return <Badge variant="success">Active</Badge>;
-  if (status === 'draft') return <Badge variant="warning">Draft</Badge>;
+  if (status === 'active') return <Badge variant="default">Active</Badge>;
+  if (status === 'draft') return <Badge variant="secondary">Draft</Badge>;
   return <Badge variant="inactive">Inactive</Badge>;
 }

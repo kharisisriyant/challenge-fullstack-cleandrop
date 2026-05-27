@@ -1,42 +1,88 @@
 import { Layers, LogOut } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
-import { cn } from '../../lib/utils';
+import {
+  Sidebar as SidebarRoot,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarTrigger,
+} from '../ui/sidebar';
+
+const NAV_ITEMS = [{ label: 'Services', icon: Layers, path: '/services' }];
 
 export function Sidebar() {
   const { user, logout } = useAuthStore();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r bg-white">
-      <div className="flex h-14 items-center border-b px-4">
-        <span className="text-sm font-semibold text-gray-700">platform</span>
-        <span className="ml-1 text-xs text-gray-400">{'<<'}</span>
-      </div>
-
-      <nav className="flex-1 p-3">
-        <div
-          className={cn(
-            'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm font-medium',
-            'bg-gray-100 text-gray-900',
-          )}
-        >
-          <Layers className="h-4 w-4" />
-          Services
+    <SidebarRoot collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border h-14 flex-row items-center px-4">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <span className="truncate text-sm font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+            platform
+          </span>
         </div>
-      </nav>
+      </SidebarHeader>
 
-      <div className="border-t p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700">
-              {user?.name?.charAt(0).toUpperCase()}
-            </div>
-            <span className="text-sm text-gray-700">{user?.name}</span>
-          </div>
-          <button onClick={logout} className="text-gray-400 hover:text-gray-600">
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    </aside>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {NAV_ITEMS.map((item) => {
+                const active = location.pathname.startsWith(item.path);
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      isActive={active}
+                      tooltip={item.label}
+                      onClick={() => navigate(item.path)}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              size="lg"
+              tooltip={user?.name ?? 'Account'}
+              className="data-[active=true]:bg-transparent"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
+                {user?.name?.charAt(0).toUpperCase()}
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{user?.name}</span>
+                <span className="truncate text-xs text-sidebar-foreground/60">{user?.role}</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Log out" onClick={logout}>
+              <LogOut />
+              <span>Log out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+
+      <SidebarRail />
+    </SidebarRoot>
   );
 }

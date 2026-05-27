@@ -88,10 +88,10 @@ export function ServicesPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">Services</h1>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <h1 className="text-xl font-bold sm:text-2xl">Services</h1>
           <Badge variant="secondary" className="flex items-center gap-1 text-xs">
             <Building2 className="h-3 w-3" />
             Platform-wide
@@ -102,13 +102,13 @@ export function ServicesPage() {
 
       <SummaryCards stats={statsData?.serviceStats} />
 
-      <div className="mt-6 rounded-xl border bg-white p-6">
+      <div className="mt-6 rounded-xl border bg-white p-4 sm:p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold">Catalog</h2>
           {isAdmin && (
             <ServiceFormModal
               trigger={
-                <Button size="sm">
+                <Button size="sm" variant="outline">
                   <Plus className="mr-1 h-4 w-4" />
                   Add
                 </Button>
@@ -117,8 +117,8 @@ export function ServicesPage() {
           )}
         </div>
 
-        <div className="mb-4 flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="relative w-full sm:max-w-sm sm:flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search services..."
@@ -130,28 +130,30 @@ export function ServicesPage() {
               }}
             />
           </div>
-          <Select value={status || 'all'} onValueChange={handleFilterChange(setStatus)}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              {STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={category || 'all'} onValueChange={handleFilterChange(setCategory)}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2 sm:gap-3">
+            <Select value={status || 'all'} onValueChange={handleFilterChange(setStatus)}>
+              <SelectTrigger className="flex-1 sm:w-40 sm:flex-none">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                {STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={category || 'all'} onValueChange={handleFilterChange(setCategory)}>
+              <SelectTrigger className="flex-1 sm:w-44 sm:flex-none">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {loading && <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}
