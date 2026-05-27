@@ -12,6 +12,7 @@ import { StatusBadge } from './StatusBadge';
 import { ServiceFormModal } from './ServiceFormModal';
 import { DELETE_SERVICE } from '../../graphql/services';
 import { GET_COMPANIES } from '../../graphql/companies';
+import { Badge } from '../ui/badge';
 
 interface Company {
   id: string;
@@ -355,8 +356,10 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
                 <td className="py-3 pr-4 text-muted-foreground">{service.category}</td>
                 <td className="py-3 pr-4">
                   <div className="flex items-center gap-1 text-muted-foreground">
-                    <Building2 className="h-3 w-3" />
-                    <span className="text-xs">{service.company?.name}</span>
+                    <Badge variant="outline" className="p-2">
+                      <Building2 className="h-3 w-3" />
+                      <span className="text-xs">{service.company?.name}</span>
+                    </Badge>
                   </div>
                 </td>
                 <td className="py-3 pr-4">
@@ -407,8 +410,10 @@ export function ServicesTable({ services, total, page, limit, isAdmin, sortBy, s
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <span className="rounded bg-muted px-1.5 py-0.5">{service.category}</span>
               <span className="flex items-center gap-1">
-                <Building2 className="h-3 w-3" />
-                {service.company?.name}
+                <Badge variant="outline">
+                  <Building2 className="h-3 w-3" />
+                  {service.company?.name}
+                </Badge>
               </span>
               <span>{service.duration} min</span>
               <span className="font-medium text-foreground">EUR {service.basePrice}</span>

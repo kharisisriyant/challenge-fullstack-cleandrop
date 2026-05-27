@@ -1,7 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '../ui/sidebar';
-import { Separator } from '../ui/separator';
 
 export function AppLayout() {
   return (
@@ -11,7 +10,7 @@ export function AppLayout() {
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur md:px-6">
           <SidebarTrigger className="-ml-1" />
         </header>
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-w-0 flex-1 overflow-y-auto">
           <Outlet />
         </div>
       </SidebarInset>
